@@ -29,7 +29,7 @@ public:
     // Subscrive to input video feed and publish output video feed
     image_sub_ = it_.subscribe("/camera/image_raw", 1,
       &ImagebridgeRosCV::imageCb, this);
-    image_pub_ = it_.advertise("/image_converter/output_video", 1);
+    image_pub_ = it_.advertise("/image_converter/image_raw", 1);
 
     //cv::Ptr<cv::FastFeatureDetector> detector = cv::FastFeatureDetector::create(10, true,  cv::FastFeatureDetector::TYPE_9_16);
 
@@ -48,6 +48,7 @@ public:
   void imageCb(const sensor_msgs::ImageConstPtr& msg)
   {
     cv_bridge::CvImagePtr cv_ptr;
+    cv_bridge::CvImage res_cv;
     cv::Ptr<cv::FastFeatureDetector> detector = cv::FastFeatureDetector::create(25, true,  cv::FastFeatureDetector::TYPE_9_16);
     cv::Ptr<cv::CLAHE> obj_CLAHE = cv::createCLAHE(2, cv::Size(4,4));
 
@@ -135,7 +136,9 @@ public:
     std::cout<<"Number of Keypoints Detected after HE= "<<keypoints_hist_equa.size()<<std::endl;
     drawKeypoints(CLAHE_image,keypoints_hist_equa,hist_equalized_image_with_kp);
 
-
+    res_cv.header = msg->header;
+    res_cv.encoding = sensor_msgs::image_encodings::MONO8;
+    res_cv.image =  CLAHE_image;
 
 
 
@@ -177,7 +180,8 @@ public:
     cv::waitKey(3);
     std::cout<<"End here \n";
     // Output modified video stream
-    image_pub_.publish(cv_ptr->toImageMsg());
+    //image_pub_.publish(cv_ptr->toImageMsg());
+    image_pub_.publish(res_cv.toImageMsg());
   }
 };
 

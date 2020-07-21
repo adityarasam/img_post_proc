@@ -23,23 +23,42 @@ class ImagebridgeRosCV
   image_transport::Publisher image_pub_;
 
 public:
+
+  int feature_type;                                           // 0 FAST, 1 SURF, 2 SIFT, ORB  
   ImagebridgeRosCV()
-    : it_(nh_)
+    : it_(nh_), feature_type(0)
   {
     // Subscrive to input video feed and publish output video feed
-    image_sub_ = it_.subscribe("/camera/image_raw", 1,
-      &ImagebridgeRosCV::imageCb, this);
+    ros::NodeHandle pnh;
+    pnh.getParam("/image_converter_post_proc/feature_type", feature_type);
+    pnh.param("/image_converter_post_proc/feature_type", feature_type, 2);
+
+    ROS_INFO("  feature_type=%d", feature_type);
+
+    image_sub_ = it_.subscribe("/camera/image_raw", 1, &ImagebridgeRosCV::imageCb, this);
     image_pub_ = it_.advertise("/image_converter/image_raw", 1);
 
     //cv::Ptr<cv::FastFeatureDetector> detector = cv::FastFeatureDetector::create(10, true,  cv::FastFeatureDetector::TYPE_9_16);
-
+    
     cv::namedWindow(OPENCV_WINDOW);
     cv::namedWindow(OPENCV_WINDOW_HIST_EQUALIZED);
     cv::namedWindow(OPENCV_WINDOW_FAST);
     cv::namedWindow(OPENCV_WINDOW_HIST_EQUALIZED_FAST);
     cv::namedWindow(OPENCV_WINDOW_CLAHE);
+
+    if (feature_type == 0){
+        std::cout<<"Feature Type: FAST \n";
+    }
+    else if (feature_type == 1)
+    {
+        std::cout<<"Feature Type: SURF \n";
+    }
+    else if (feature_type == 2){
+        std::cout<<"Feature Type: SIFT \n";
+    }
+
   }
- 
+  
   ~ImagebridgeRosCV()
   {
     cv::destroyWindow(OPENCV_WINDOW);
@@ -111,12 +130,25 @@ public:
     imshow("calcHist Camera Image Original", histImage );
 
     
+    //switch(feature_type) {
+    //    case 0 :
+    //        std::cout << "FAST" << std::endl; 
+            //------------FAST detect
+            detector->detect(flipped_image,keypoints_orig,cv::noArray());
+            std::cout<<"Number of Keypoints Detected Original= "<<keypoints_orig.size()<<std::endl;
+            drawKeypoints(flipped_image,keypoints_orig,flipped_image_with_kp);
+    //        break;
+     //   case 1 :
+     //       std::cout << "SURF" << std::endl;
+    //        break;
+     //   case 2 :
+     //       std::cout << "SIFT" << std::endl;
+    //        break;
+    //    default :
+    //        std::cout << "Invalid Feature Type" << std::endl;
+   //}
 
-
-    //------------FAST detect
-    detector->detect(flipped_image,keypoints_orig,cv::noArray());
-    std::cout<<"Number of Keypoints Detected Original= "<<keypoints_orig.size()<<std::endl;
-    drawKeypoints(flipped_image,keypoints_orig,flipped_image_with_kp);
+    
 
 
 

@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+
+
+<launch>
+  
+	<node name="image_converter_post_proc" pkg="img_post_proc" type="image_converter_post_proc" output="screen" >
+		<param name="feature_type" value="0" />
+	</node>
+    
+</launch>

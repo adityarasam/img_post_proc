@@ -10,10 +10,15 @@
 #include <opencv2/core/fast_math.hpp>
 
 static const std::string OPENCV_WINDOW = "Camera Image Original";
+static const std::string OPENCV_EDGE = "Camera Image EDGE";
 static const std::string OPENCV_WINDOW_FAST = "Camera Image Original FAST";
 static const std::string OPENCV_WINDOW_HIST_EQUALIZED = "Image_HE window";
 static const std::string OPENCV_WINDOW_HIST_EQUALIZED_FAST = "Camera Image CLAHE FAST";
 static const std::string OPENCV_WINDOW_CLAHE = "Camera Image CLAHE"; 
+int lowThreshold = 1;
+const int max_lowThreshold = 100;
+const int ratio = 3;
+const int kernel_size = 7;
 
 class ImagebridgeRosCV
 {
@@ -41,6 +46,7 @@ public:
     //cv::Ptr<cv::FastFeatureDetector> detector = cv::FastFeatureDetector::create(10, true,  cv::FastFeatureDetector::TYPE_9_16);
     
     cv::namedWindow(OPENCV_WINDOW);
+    cv::namedWindow(OPENCV_EDGE);
     cv::namedWindow(OPENCV_WINDOW_HIST_EQUALIZED);
     cv::namedWindow(OPENCV_WINDOW_FAST);
     cv::namedWindow(OPENCV_WINDOW_HIST_EQUALIZED_FAST);
@@ -88,12 +94,14 @@ public:
     cv::Mat flipped_image,hist_equalized_image,CLAHE_image, flipped_image_hist_calc, CLAHE_image_hist_calc;
     cv::Mat flipped_image_with_kp, hist_equalized_image_with_kp;
     cv::Mat CLAHE_image_smoothed, flipped_image_smooth; 
+    cv::Mat edge_detected;
     std::vector<cv::KeyPoint> keypoints_orig, keypoints_hist_equa;
 
     // Rotate image 180 degree
-    cv::flip(cv_ptr->image, flipped_image, -1);                                                         // ------------Flip image
-    //cv::GaussianBlur(flipped_image, flipped_image, cv::Size(5,5), 1);                                 
-    cv::bilateralFilter(flipped_image, flipped_image_smooth, 5,  2, 2);                                 // ------------Smooth image but retain edginess
+    //cv::flip(cv_ptr->image, flipped_image, -1);
+    cv::flip(cv_ptr->image, flipped_image, 1);                                                         // ------------Flip image
+    cv::GaussianBlur(flipped_image, flipped_image_smooth, cv::Size(5,5), 1);                                 
+    //cv::bilateralFilter(flipped_image, flipped_image_smooth, 5,  2, 2);                                 // ------------Smooth image but retain edginess
     // Plot the histogram
     //?????
     //flipped_image = flipped_image_smooth;
@@ -167,6 +175,8 @@ public:
     detector->detect(CLAHE_image,keypoints_hist_equa,cv::noArray());
     std::cout<<"Number of Keypoints Detected after HE= "<<keypoints_hist_equa.size()<<std::endl;
     drawKeypoints(CLAHE_image,keypoints_hist_equa,hist_equalized_image_with_kp);
+    Canny(flipped_image_smooth, edge_detected, lowThreshold, lowThreshold*ratio, kernel_size );
+    //erode(flipped_image_smooth,edge_detected,3);
 
     res_cv.header = msg->header;
     res_cv.encoding = sensor_msgs::image_encodings::MONO8;
@@ -202,11 +212,16 @@ public:
     // Update GUI Window
     
     cv::imshow(OPENCV_WINDOW, flipped_image);
+    cv::imshow("Image_CLAHE_Smoothened", flipped_image_smooth);
+    
+    cv::imshow(OPENCV_EDGE, edge_detected);
+
+    /*
     cv::imshow(OPENCV_WINDOW_FAST,flipped_image_with_kp);
     cv::imshow(OPENCV_WINDOW_HIST_EQUALIZED, hist_equalized_image);
     cv::imshow(OPENCV_WINDOW_HIST_EQUALIZED_FAST, hist_equalized_image_with_kp);
     cv::imshow(OPENCV_WINDOW_CLAHE, CLAHE_image);
-    
+    */
     //cv::imshow("Image_CLAHE_Smoothened", CLAHE_image_smoothed);
 
     cv::waitKey(3);

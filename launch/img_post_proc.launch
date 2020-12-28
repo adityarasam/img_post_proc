@@ -4,6 +4,7 @@
 <launch>
   
 	<node name="image_converter_post_proc" pkg="img_post_proc" type="image_converter_post_proc" output="screen" >
+	    <remap from="/camera/image_raw"       to="/camera_in/image_raw"/>
 		<param name="feature_type" value="0" />
 	</node>
     
